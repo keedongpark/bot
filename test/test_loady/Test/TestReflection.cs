@@ -18,8 +18,18 @@ namespace test_loady.Test
         public string v = "None";
     }
 
+    class CalleeChild : Callee
+    {
+        public void CallChild(string arg1)
+        {
+            c = arg1;
+        }
+
+        public string c = "None";
+    }
+
     [TestFixture]
-    class TestReflectedFunctionCall
+    class TestReflection
     {
         [Test]
         public void TestCallFunction()
@@ -46,6 +56,35 @@ namespace test_loady.Test
             }
 
             Assert.IsTrue(callee.v == "Hello");
+        }
+
+        [Test]
+        public void TestSubclassReflection()
+        {
+            var callee = new CalleeChild();
+            var assembly = Assembly.GetExecutingAssembly();
+
+            Callee parent = callee;
+
+            Type type = assembly.GetType("test_loady.Test.CalleeChild");
+
+            if (type != null)
+            {
+                MethodInfo methodInfo = type.GetMethod("CallChild");
+
+                if (methodInfo != null)
+                {
+                    object result = null;
+
+                    ParameterInfo[] parameters = methodInfo.GetParameters();
+
+                    object[] parametersArray = new object[] { "Hello" };
+
+                    result = methodInfo.Invoke(parent, parametersArray);
+                }
+            }
+
+            Assert.IsTrue(callee.c == "Hello");
         }
     }
 }

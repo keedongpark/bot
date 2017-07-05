@@ -26,9 +26,21 @@ namespace test_loady.Test
             CallEpsilon("a", "b", 3, 5); 
         }
 
+        [Test]
+        public void TestObjectUse()
+        {
+            v = "a";
+            Assert.IsTrue(v as string == "a");
+
+            v = 1;
+            Assert.IsTrue(Convert.ToInt32(v) == 1);
+        }
+
         void CallEpsilon(params object[] objs)
         {
 
         }
+
+        object v;
     }
 }

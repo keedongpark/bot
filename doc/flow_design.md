@@ -93,4 +93,62 @@ C# 코드 문법 체크가 일반적인 에디터에서 안 됨.
 
 reflection을 사용해서 exec, get, set 함수를 구현. 
  
- 
+### yaml / exec / get / set 버전 
+
+get/set의 필드는 정의가 없으면 dictionary를 사용.
+
+    - flow: 
+        name: login 
+        acts: 
+            - act: 
+                name: check_connected
+                type: cond 
+                do: agent.is_connected() 
+
+            - act: 
+                type: exec
+                do: agent.exec(""send_login"", parms)
+
+            - act: 
+                type: wait_msg
+                timeout: 3
+                do: > 
+                if ( msg.get("key") == ""login_resp"" )
+                {
+                    if ( msg.get(""result"") == true )
+                    {
+                        agent.set(""is_logined"", true);
+                    }
+                    else 
+                    {
+                        agent.fail();
+                    }
+                }
+
+            - act: 
+                type: cond
+                do: > 
+                    agent.get("is_logined")
+
+
+### msg 
+
+ json에서 필요한 값들 추출해서 유지하고 직접 접근 가능하게 해줌 
+
+        msg["id"]["value"]
+
+c# indexer를 사용해서 키 값으로 접근 가능하도록 함. 
+
+#### 이전 메세지의 참조 
+
+agent에 일일이 구현하기 어려울 수 있어 메세지를 보관하고 참조하면 
+편리한 경우가 많이 있다. 
+
+이런 경우를 대비하여 기능 추가 고려
+
+
+### act 재사용 
+
+parameter를 넘길 수 있도록 하고 재사용 가능하게 만듦 
+참조는 flows["login"]["change_map"] 형태로 참조 가능하게 만듦 
+
