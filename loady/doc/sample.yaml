@@ -1,0 +1,30 @@
+# 주석. json은 주석이 없음 
+
+flow: 
+  name: login 
+  acts: 
+    - act: 
+        name: check_connected
+        type: cond 
+        do: agent.is_connected() 
+
+    - act: 
+        type: exec
+        do: agent.exec("send_login", parms)
+
+    - act: 
+        type: wait_msg
+        do: > 
+          if ( msg.get_key() == "login_resp" )
+          {
+            if ( msg["result"] == true )
+            {
+              agent["is_logined"] = true;
+            }
+          }
+
+    - act: 
+        type: cond
+        do: > 
+          agent.is_logined()
+
