@@ -9,7 +9,7 @@ namespace loady
 {
     public class Msg
     {
-        public JToken json = null;
+        public JToken json = JToken.Parse("{}");
 
         public bool Set(string m)
         {

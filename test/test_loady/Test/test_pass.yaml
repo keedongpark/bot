@@ -1,0 +1,33 @@
+# agents configuration test 
+
+
+agents: 
+  module: firsthero
+  prefix: test_ 
+  begin : 10 
+  count : 100
+  runners: 5
+  
+  override:  # override agents for each index
+    - agent: 
+       index: 2
+       id: test_2
+	   pw: test_2
+	   flow: # override flow definition 
+	     desc: test fail case for some agents
+	     acts: 
+		   - act: 
+			  do: agent.fail()
+
+flow: 
+  desc: pass through 
+  acts:  
+   - act: 
+      do: > 
+	    agent.next()
+      on: > 
+   - act: 
+      do: > 
+	    agent.next()
+      on: > 
+	    agent.noop()

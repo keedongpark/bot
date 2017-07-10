@@ -41,6 +41,14 @@ namespace test_loady.Test
 
         }
 
+        [Test]
+        public void TestNullConvertion()
+        {
+            var s = null as string;
+
+            Assert.IsTrue(s == null);
+        }
+
         object v;
     }
 }

@@ -101,34 +101,24 @@ get/set의 필드는 정의가 없으면 dictionary를 사용.
         name: login 
         acts: 
             - act: 
-                name: check_connected
-                type: cond 
-                do: agent.is_connected() 
+                check : > 
+					agent.expect("is_connected")
 
             - act: 
-                type: exec
-                do: agent.exec(""send_login"", parms)
+                do: > 
+					agent.exec(""send_login"", parms)
 
             - act: 
-                type: wait_msg
                 timeout: 3
-                do: > 
-                if ( msg.get("key") == ""login_resp"" )
-                {
-                    if ( msg.get(""result"") == true )
-                    {
-                        agent.set(""is_logined"", true);
-                    }
-                    else 
-                    {
-                        agent.fail();
-                    }
-                }
+                on: > 
+					msg.get("key") == ""login_resp"" && msg.get(""result"")                
 
             - act: 
-                type: cond
-                do: > 
-                    agent.get("is_logined")
+                check : > 
+                    agent.expect("is_login")
+
+
+do / check / on 으로 전체 테스트 구성. 
 
 
 ### msg 

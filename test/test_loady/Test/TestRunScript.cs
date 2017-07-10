@@ -22,7 +22,6 @@ namespace test_loady.Test
             // requires .net 4.6+ for rosyln
             // 많은 것들이 깔린다. 
 
-            int count = 3;
             var script = "3 == 3";
 
             var res = CSharpScript.EvaluateAsync<bool>(script);
@@ -65,6 +64,9 @@ namespace test_loady.Test
         {
             var script = CSharpScript.Create("value = 3", globalsType: typeof(Agent));
             script.Compile();
+
+            // 여기서는 parse tree 정도까지만 만듦
+            // RunAsync에서 실제 참조 등에 대한 처리가 이루어짐
 
             var agent = new Agent();
 

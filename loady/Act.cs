@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
+using NLog;
 
 namespace loady
 {
@@ -11,65 +14,151 @@ namespace loady
     // Executes simulation
     // - process timeout 
     // - process repetition
-    public abstract class Act
+    public class Act
     {
-        private List<Act> children = null;
-        private int currentChild = 0;
+        public enum Result
+        {
+            SucessStop,
+            SucessContinue,
+            FailStop,
+            FailStopException, 
+            FailContinue,
+        }
+
+        // script에서 접근 
+        public class Globals
+        {
+            public Agent agent;
+            public Msg msg;
+        }
+
+        // 기본 필드들
+        private int index = -1;
         private YamlMappingNode def = null;
         private Agent agent = null;
 
-        public enum Result
-        {
-            SucessStop, 
-            SucessContinue,
-            FailStop, 
-            FailContinue, 
-        }
+        // 스크립트 관련 필드
+        private Globals globals = new Globals();
+        private Script<object> doScript = null;
+        private Script<object> onScript = null;
 
-        // TODO: 
-        // Dictionary for Act
+        private static Logger logger = LogManager.GetCurrentClassLogger();
 
-        public Act Current
-        {
-            get
-            {
-                if ( children == null || children.Count == 0)
-                {
-                    return null;
-                }
-
-                return children[currentChild];
-            }
-        }
-
+        /// <summary>
+        /// get Agent
+        /// </summary>
         public Agent Agent { get { return agent; } }
 
-        public Act(Agent owner, YamlMappingNode def)
+        /// <summary>
+        /// get index in a flow 
+        /// </summary>
+        public int Index {  get { return index; } }
+
+        /// <summary>
+        /// 실행 스크립트를 가짐
+        /// </summary>
+        public bool HasDoScript {  get { return doScript != null; } }
+
+        /// <summary>
+        /// msg 처리 스크립트를 가짐 
+        /// </summary>
+        public bool HasOnScript {  get { return doScript != null; } }
+
+        /// <summary>
+        /// 초기화 
+        /// </summary>
+        /// <param name="owner">나를 실행하는 에이전트</param>
+        /// <param name="def">act를 포함하는 yaml 정의</param>
+        public Act(int index, Agent owner, YamlMappingNode def)
         {
+            this.index = index;
             this.agent = owner;
+            this.globals.agent = owner;
+            this.globals.msg = null;
             this.def = def;
 
-            // TODO: 
-            // Build Name / Type 
+            BuildScripts();
         }
 
-        virtual public Result Execute()
+        public Result Do()
         {
-            // Execute
+            if ( doScript == null)
+            {
+                return Result.FailContinue;
+            }
+
+            try
+            {
+                doScript.RunAsync(globals);
+            }
+            catch ( CompilationErrorException ex)
+            {
+                logger.Error(ex);
+
+                return Result.FailStopException;
+            }
+
             return Result.SucessContinue;
         }
 
-        virtual public Result Execute(Msg m)
+        public Result On(Msg m)
         {
+            if ( onScript == null)
+            {
+                return Result.FailContinue;
+            }
+
+            this.globals.msg = m;
+
+            try
+            {
+                onScript.RunAsync(globals);
+            }
+            catch (CompilationErrorException ex)
+            {
+                logger.Error(ex);
+
+                return Result.FailStopException;
+            }
+
             return Result.SucessContinue;
         }
-    }
 
-    public class Flow : Act
-    {
-        public Flow(Agent owner, YamlMappingNode def)
-            : base(owner, def)
+        private void BuildScripts()
         {
-        }
+            var actNode = (YamlMappingNode)this.def["act"];
+
+            try
+            {
+                var doNode = (YamlScalarNode)actNode["do"];
+                doScript = CSharpScript.Create(doNode.Value, globalsType: typeof(Globals));
+                doScript.Compile();
+            }
+            catch ( KeyNotFoundException ex)
+            {
+                logger.Error(ex);
+            }
+            catch ( CompilationErrorException ex)
+            {
+                logger.Error(ex);
+                throw;
+            }
+
+            try
+            {
+                var onNode = (YamlScalarNode)actNode["on"];
+                onScript = CSharpScript.Create(onNode.Value, globalsType: typeof(Globals));
+                onScript.Compile();
+            }
+            catch ( KeyNotFoundException ex)
+            {
+                logger.Error(ex);
+            }
+            catch ( CompilationErrorException ex)
+            {
+                logger.Error(ex);
+                throw;
+            }
+        } 
     }
 }
