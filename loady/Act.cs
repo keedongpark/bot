@@ -65,19 +65,43 @@ namespace loady
         public bool HasOnScript {  get { return doScript != null; } }
 
         /// <summary>
+        /// To copy
+        /// </summary>
+        private Act()
+        {
+        }
+
+        /// <summary>
         /// 초기화 
         /// </summary>
         /// <param name="owner">나를 실행하는 에이전트</param>
         /// <param name="def">act를 포함하는 yaml 정의</param>
-        public Act(int index, Agent owner, YamlMappingNode def)
+        public Act(int index, YamlMappingNode def)
         {
             this.index = index;
-            this.agent = owner;
-            this.globals.agent = owner;
-            this.globals.msg = null;
             this.def = def;
 
             BuildScripts();
+        }
+
+        public void Set(Agent agent)
+        {
+            this.agent = agent;
+            this.globals.agent = agent;
+            this.globals.msg = null;
+        }
+
+        public Act Clone(Agent agent)
+        {
+            var nact = new Act();
+
+            nact.index = this.index;
+            nact.def = this.def;
+            nact.Set(agent);
+            nact.doScript = this.doScript;
+            nact.onScript = this.onScript;
+
+            return nact;
         }
 
         public Result Do()

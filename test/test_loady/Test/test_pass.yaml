@@ -1,5 +1,6 @@
 # agents configuration test 
-
+# script는 소문자만 사용해서 작성. 
+# 
 
 agents: 
   module: firsthero
@@ -7,13 +8,9 @@ agents:
   begin : 10 
   count : 100
   runners: 5
-  
-  override:  # override agents for each index
-    - agent: 
-       index: 2
-       id: test_2
-	   pw: test_2
-	   flow: # override flow definition 
+ 
+  agent_2: 
+	flow: # override flow definition 
 	     desc: test fail case for some agents
 	     acts: 
 		   - act: 
@@ -21,6 +18,7 @@ agents:
 
 flow: 
   desc: pass through 
+  repeat: 1000
   acts:  
    - act: 
       do: > 

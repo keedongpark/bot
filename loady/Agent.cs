@@ -20,8 +20,19 @@ namespace loady
         bool completed = false;
         bool failed = false;
         string msg = "";
+        bool delayed = false;
+        int delayedMilliSeconds = 0;
+        int delayStartTick = 0;
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        public class Config
+        {
+            public string id = "test";
+            public string pw = "test";
+        }
+
+        Config config;
 
         /// <summary>
         /// get index 
@@ -57,14 +68,20 @@ namespace loady
         /// </summary>
         /// <param name="index"></param>
         /// <param name="def"></param>
-        public Agent(int index, YamlMappingNode def, Flow flow)
+        public Agent(int index, Config config)
         {
             this.index = index;
-            this.flow = flow;
+            this.config = config;
+        }
 
-            // parse def 
-            // - create a flow and override if any
-            // 
+        public void Set(Flow flow)
+        {
+            this.flow = flow;
+        }
+
+        public void Start()
+        {
+            flow.Start();
         }
 
         public void Execute()
@@ -74,11 +91,24 @@ namespace loady
                 return;
             }
 
+            // TODO: process network for this agent
+
             try
             {
+                if (delayed)
+                {
+                    if ((Environment.TickCount - delayStartTick) < delayedMilliSeconds)
+                    {
+                        return;
+                    }
+
+                    delayed = false;
+                    delayStartTick = 0;
+                }
+
                 flow.Do();
             }
-            catch ( Exception ex)
+            catch (Exception ex)
             {
                 logger.Error(ex);
 
@@ -106,6 +136,13 @@ namespace loady
         public void fail(string msg = "")
         {
             Complete(true, $"fail from script w/ {msg}");
+        }
+
+        public void delay(int milliseconds)
+        {
+            delayed = true;
+            delayedMilliSeconds = milliseconds;
+            delayStartTick = Environment.TickCount;
         }
 
         public bool set(string key, bool v)
@@ -155,7 +192,7 @@ namespace loady
             return (float)get(key);
         }
 
-        public int get_integer(string key)
+        public int get_int(string key)
         {
             return (int)get(key);
         }
