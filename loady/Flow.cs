@@ -64,14 +64,22 @@ namespace loady
 
         public Flow Clone(Agent agent)
         {
+            Contract.Assert(agent != null);
+            Contract.Assert(this.acts.Count > 0); // acts가 없는 플로우는 의미 없다.
+
             var nflow = new Flow();
 
             nflow.agent = agent;
+            nflow.desc = this.desc;
+            nflow.configRepeat = this.configRepeat;
+            nflow.repeated = this.repeated;
 
             foreach ( var act in acts)
             {
-                acts.Add(act.Clone(agent));
+                nflow.acts.Add(act.Clone(agent));
             }
+
+            // Post: this의 모든 필드와 nflow의 모든 필드가 거의 같다. 
 
             return nflow;
         }
@@ -83,11 +91,17 @@ namespace loady
 
         public void Do()
         {
+            Contract.Assert(index >= 0);
+            Contract.Assert(index < acts.Count);
+
             acts[index].Do();
         }
 
         public void On(Msg m)
         {
+            Contract.Assert(index >= 0);
+            Contract.Assert(index < acts.Count);
+
             acts[index].On(m);
         }
 
@@ -115,7 +129,10 @@ namespace loady
             {
                 this.index = index;
             }
-            nflow
+            else
+            {
+                throw new ArgumentOutOfRangeException($"index is out of range {index}");
+            }
         }
     }
 }

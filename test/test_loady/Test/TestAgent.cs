@@ -15,9 +15,11 @@ namespace test_loady.Test
         [Test]
         public void TestConfig()
         {
-            var loader = new Loader();
+            var loader = new Loader(new DefaultModule());
 
-            Assert.IsTrue(loader.Load("test_pass.yaml"));
+            var path = @"D:\projects\bot\test\test_loady\Test\";
+
+            Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
             Assert.IsTrue(loader.Agents.Count == 100);
             Assert.IsTrue(loader.Agents[0].Flow.Acts.Count == 2);
             Assert.IsTrue(loader.Agents[2].Flow.Acts.Count == 1);
@@ -28,7 +30,57 @@ namespace test_loady.Test
         [Test]
         public void TestDo()
         {
+            var loader = new Loader(new DefaultModule());
 
+            var path = @"D:\projects\bot\test\test_loady\Test\";
+
+            Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
+            Assert.IsTrue(loader.Agents.Count == 100);
+            Assert.IsTrue(loader.Agents[0].Flow.Acts.Count == 2);
+
+            var agent = loader.Agents[0];
+            var act = agent.Flow.Acts[0];
+
+            agent.Start();
+            agent.Execute();
+
+            Assert.IsTrue(agent.ExecuteCount == 1);
+            Assert.IsTrue(agent.Flow.Index == 1);
+
+            agent.Execute();
+
+            Assert.IsTrue(agent.ExecuteCount == 2);
+            Assert.IsTrue(agent.Flow.Index == 0);
+
+            agent.Complete(false, "Finished");
+        }
+
+        [Test]
+        public void TestDoFail()
+        {
+            var loader = new Loader(new DefaultModule());
+
+            var path = @"D:\projects\bot\test\test_loady\Test\";
+
+            Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
+            Assert.IsTrue(loader.Agents.Count == 100);
+            Assert.IsTrue(loader.Agents[0].Flow.Acts.Count == 2);
+
+            var agent = loader.Agents[0];
+            var act = agent.Flow.Acts[0];
+
+            agent.Start();
+            agent.Execute();
+
+            Assert.IsTrue(agent.ExecuteCount == 1);
+            Assert.IsTrue(agent.Flow.Index == 1);
+
+            agent.Execute();
+
+            Assert.IsTrue(agent.ExecuteCount == 2);
+            Assert.IsTrue(agent.Flow.Index == 0);
+
+            agent.Complete(false, "Finished");
         }
 
         [Test]

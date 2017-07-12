@@ -1,16 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.RepresentationModel;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
+using System.Reflection;
+using System.IO;
 using NLog;
 
 namespace loady
 {
-
     public class Agent
     {
         Dictionary<string, object> dict = new Dictionary<string, object>();
@@ -23,6 +18,9 @@ namespace loady
         bool delayed = false;
         int delayedMilliSeconds = 0;
         int delayStartTick = 0;
+        int executeCount = 0;
+        string typeName = "loady.Agent";
+        Session session;
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -54,7 +52,15 @@ namespace loady
         /// </summary>
         public string Message { get { return msg; } }
 
+        /// <summary>
+        /// get flow
+        /// </summary>
         public Flow Flow { get { return flow; } }
+
+        /// <summary>
+        /// get execute count
+        /// </summary>
+        public int ExecuteCount { get { return executeCount; } }
 
         /// <summary>
         /// 테스트 용도로만 사용
@@ -64,7 +70,8 @@ namespace loady
         }
 
         /// <summary>
-        /// 
+        /// Agent의 기본 데이터를 설정 
+        /// Effect: index, config가 지정됨
         /// </summary>
         /// <param name="index"></param>
         /// <param name="def"></param>
@@ -72,26 +79,70 @@ namespace loady
         {
             this.index = index;
             this.config = config;
+            this.session = new Session(this);
+
+            Contract.Assert(this.index >= 0);
+            Contract.Assert(this.config.id.Length > 0);
+            Contract.Assert(this.config.pw.Length > 0);
         }
 
+        /// <summary>
+        /// Flow를 지정. 
+        /// </summary>
+        /// <param name="flow"></param>
         public void Set(Flow flow)
         {
             this.flow = flow;
+
+            Contract.Assert(this.flow != null);
         }
 
+        /// <summary>
+        /// Set typename (namespace.class) 
+        /// call() 함수가 동작하려면 실제 타잎이 필요
+        /// </summary>
+        /// <param name="typeName"></param>
+        public void SetTypeName(string typeName)
+        {
+            this.typeName = typeName;
+        }
+
+        /// <summary>
+        /// Flow를 시작. 
+        /// Effect: Flow의 시작 액트로 이동
+        /// </summary>
         public void Start()
         {
+            Contract.Assert(flow != null);
+
             flow.Start();
+
+            OnStart();
         }
 
+        /// <summary>
+        /// 실행. 완료되었으면 아무것도 안 함. 
+        /// Flow를 실행. 스크립트 실행됨
+        /// Pre: Constructor / Set / Start called 
+        /// Post: 스크립트 실행됨. 메세지 있으면 처리됨
+        /// </summary>
         public void Execute()
         {
+            Contract.Assert(flow != null);
+            Contract.Assert(index >= 0);
+
             if ( IsCompleted )
             {
                 return;
             }
 
-            // TODO: process network for this agent
+            OnExecuteNet();
+
+            Contract.Assert(!IsCompleted);
+
+            ++executeCount;
+
+            OnExecute();
 
             try
             {
@@ -107,10 +158,11 @@ namespace loady
                 }
 
                 flow.Do();
+
             }
             catch (Exception ex)
             {
-                logger.Error(ex);
+                logger.Error($"Agent exception: {ex}");
 
                 Complete(true, ex.ToString());
             }
@@ -121,7 +173,54 @@ namespace loady
             failed = fail;
             completed = true;
             this.msg = msg;
+
+            OnComplete();
+
+            logger.Info($"Completed {Index}");
         }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <param name="stream"></param>
+        public virtual void OnRecv(MemoryStream stream)
+        {
+            // stream에서 읽어서 처리하고 
+            // 위치를 조절해서 계속 될 수 있도록 함
+            // 성능 보다는 간결함이 중요하니 복사해서 처리
+
+            // 처음으로 이동 시킴
+            stream.Seek(0, SeekOrigin.Begin);
+        }
+
+        #region Override Functions 
+        protected virtual void OnStart()
+        {
+
+        }
+
+        protected virtual void OnExecute()
+        {
+        
+        }
+
+        protected virtual void OnExecuteNet()
+        {
+            
+        }
+
+        protected virtual void OnComplete()
+        {
+
+        }
+        #endregion
+
+        /// <summary>
+        /// Def: Script Functions 
+        /// - are functions that can be called from scripts 
+        /// - can be used only when Execute() can be called 
+        /// </summary>
+        #region Script Functions
 
         public void next()
         {
@@ -137,6 +236,33 @@ namespace loady
         {
             Complete(true, $"fail from script w/ {msg}");
         }
+
+        public object call(string method, params object[] args)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+
+            try
+            {
+                Type type = assembly.GetType(this.typeName);
+
+                MethodInfo methodInfo = type.GetMethod(method);
+
+                if (methodInfo != null)
+                {
+                    ParameterInfo[] parameters = methodInfo.GetParameters();
+
+                    return methodInfo.Invoke(this, args);
+                }
+            }
+            catch ( Exception ex)
+            {
+                logger.Error(ex);
+
+                fail($"method {method} call failed");
+            }
+
+            return null;
+        } 
 
         public void delay(int milliseconds)
         {
@@ -201,5 +327,6 @@ namespace loady
         {
             dict.Remove(key);
         }
+        #endregion
     }
 }

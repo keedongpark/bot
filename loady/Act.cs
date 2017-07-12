@@ -62,7 +62,7 @@ namespace loady
         /// <summary>
         /// msg 처리 스크립트를 가짐 
         /// </summary>
-        public bool HasOnScript {  get { return doScript != null; } }
+        public bool HasOnScript {  get { return onScript != null; } }
 
         /// <summary>
         /// To copy

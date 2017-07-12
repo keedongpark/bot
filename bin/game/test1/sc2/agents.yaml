@@ -1,0 +1,40 @@
+agents: 
+   prefix: test_
+   password: test_fh 
+   begin_index : 100 
+   count : 200
+   flow: flow_login.yaml
+
+# loady first_hero agents.yaml 
+# loady first_hero agents_fail.yaml 
+
+
+# 다른 방법은 개별적으로 flow 들을 다 지정하는 방식 
+# 
+agents: 
+  prefix: test_ 
+  begin : 10 
+  count : 100
+  
+  override:  # override agents for each index
+    - agent: 
+       index: 2
+       id: test_2
+	   pw: test_2
+	   flow: # override flow definition 
+	     desc: test fail case for some agents
+	     acts: 
+		   - act: 
+			  do: agent.fail()
+
+flow: 
+  desc: pass through 
+  acts:  
+   - act: 
+      do: > 
+	    agent.next()
+      on: > 
+   - act: 
+      do: > 
+	    agent.next()
+      on: > 

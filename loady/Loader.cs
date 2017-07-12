@@ -19,15 +19,25 @@ namespace loady
         string prefix = "test_";
         int beginIndex = 0;
         int agentCount = 1;
-        string module = "";
+        Module module;
 
         Logger logger = LogManager.GetCurrentClassLogger();
 
         public List<Agent> Agents { get { return agents; } }
 
+        public Loader(Module module)
+        {
+            this.module = module;
+
+            Contract.Assert(module != null);
+        }
+
         public bool Load(string filename)
         {
             StreamReader sr = new StreamReader(filename);
+
+            // http://www.yamllint.com/
+            // to verify 
 
             var yaml = new YamlStream();
             yaml.Load(sr);
@@ -50,7 +60,6 @@ namespace loady
             beginIndex = Int32.Parse(beginNode.Value);
             agentCount = Int32.Parse(countNode.Value);
             runnerCount = Int32.Parse(runnersNode.Value);
-            module = moduleNode.Value;
 
             CreateAgents(agentsNode);
 
@@ -86,16 +95,17 @@ namespace loady
 
             if ( agentsNode.Children.ContainsKey(agentKey) )
             {
-                var flowNode = (YamlMappingNode)agentsNode.Children["flow"];
+                var agentNode = (YamlMappingNode)agentsNode.Children[agentKey];
+                var flowNode = (YamlMappingNode)agentNode.Children["flow"];
                 var flow = new Flow(flowNode);
 
-                var agent1 = new loady.Agent(index, config);
+                var agent1 = module.Create(index, config);
                 agent1.Set(flow);
 
                 return agent1;
             }
 
-            var agent = new loady.Agent(index, config);
+            var agent = module.Create(index, config);
             agent.Set(sharedFlow.Clone(agent));
 
             return agent;
