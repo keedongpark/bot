@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
 
-namespace test_loady
+namespace test
 {
     class TestRunner
     {

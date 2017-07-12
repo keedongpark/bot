@@ -7,7 +7,7 @@ using System.IO;
 using NUnit.Framework;
 using YamlDotNet.RepresentationModel;
 
-namespace test_loady.Test
+namespace test.Test
 {
     [TestFixture]
     class TestYamlConfig

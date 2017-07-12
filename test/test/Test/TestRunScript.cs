@@ -7,7 +7,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 
-namespace test_loady.Test
+namespace test.Test
 {
     public class TestAgentDummy
     {
@@ -134,7 +134,7 @@ namespace test_loady.Test
         public void TestScriptSubClass()
         {
             var script = CSharpScript.Create(
-                @"agent.call(""test_loady.Test.TestAgentSub"", ""Hello"");",
+                @"agent.call(""test.Test.TestAgentSub"", ""Hello"");",
                 globalsType: typeof(Globals)
                 );
 
@@ -154,7 +154,7 @@ namespace test_loady.Test
         public void TestScriptCallWithParams()
         {
             var script = CSharpScript.Create(
-                @"agent.call(""test_loady.Test.TestAgentSub"", ""HelloParams"", 1, 1.0f, ""string"");",
+                @"agent.call(""test.Test.TestAgentSub"", ""HelloParams"", 1, 1.0f, ""string"");",
                 globalsType: typeof(Globals)
                 );
 

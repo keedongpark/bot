@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using loady;
 
-namespace test_loady.Test
+namespace test.Test
 {
     [TestFixture]
     class TestAgent
@@ -17,7 +17,7 @@ namespace test_loady.Test
         {
             var loader = new Loader(new DefaultModule());
 
-            var path = @"D:\projects\bot\test\test_loady\Test\";
+            var path = @"D:\projects\bot\test\test\Test\";
 
             Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
             Assert.IsTrue(loader.Agents.Count == 100);
@@ -32,7 +32,7 @@ namespace test_loady.Test
         {
             var loader = new Loader(new DefaultModule());
 
-            var path = @"D:\projects\bot\test\test_loady\Test\";
+            var path = @"D:\projects\bot\test\test\Test\";
 
             Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
             Assert.IsTrue(loader.Agents.Count == 100);
@@ -60,7 +60,7 @@ namespace test_loady.Test
         {
             var loader = new Loader(new DefaultModule());
 
-            var path = @"D:\projects\bot\test\test_loady\Test\";
+            var path = @"D:\projects\bot\test\test\Test\";
 
             Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
             Assert.IsTrue(loader.Agents.Count == 100);

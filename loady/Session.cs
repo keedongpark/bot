@@ -17,6 +17,7 @@ namespace loady
     {
         Agent agent;
         string host;
+        ushort port;
         Socket socket;
         const int recvBufferSize = 1024;
         byte[] recvBuffer = new byte[recvBufferSize];
@@ -39,6 +40,9 @@ namespace loady
         public bool Connect(string host, ushort port)
         {
             Contract.Assert(socket == null);
+
+            this.host = host;
+            this.port = port;
 
             IPHostEntry ipHostInfo = Dns.GetHostEntry(host);
             IPAddress ipAddress = ipHostInfo.AddressList[0];

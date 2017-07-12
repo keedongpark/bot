@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
-namespace test_loady.Test
+namespace test.Test
 {
     [TestFixture]
     class TestJson

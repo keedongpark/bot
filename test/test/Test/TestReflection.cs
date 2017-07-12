@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Reflection;
 using NUnit.Framework;
 
-namespace test_loady.Test
+namespace test.Test
 {
     class Callee
     {
@@ -37,7 +37,7 @@ namespace test_loady.Test
             var callee = new Callee();
             var assembly = Assembly.GetExecutingAssembly();
 
-            Type type = assembly.GetType("test_loady.Test.Callee");
+            Type type = assembly.GetType("test.Test.Callee");
 
             if (type != null)
             {
@@ -66,7 +66,7 @@ namespace test_loady.Test
 
             Callee parent = callee;
 
-            Type type = assembly.GetType("test_loady.Test.CalleeChild");
+            Type type = assembly.GetType("test.Test.CalleeChild");
 
             if (type != null)
             {

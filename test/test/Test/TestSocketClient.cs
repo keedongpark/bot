@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Threading;
 using NUnit.Framework;
 
-namespace test_loady.Test
+namespace test.Test
 {
     // State object for receiving data from remote device.
     public class StateObject

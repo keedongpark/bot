@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
-namespace test_loady.Test
+namespace test.Test
 {
     [TestFixture]
     class TestCsharpFeatures
