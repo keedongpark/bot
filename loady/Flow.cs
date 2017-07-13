@@ -12,6 +12,7 @@ namespace loady
     {
         Agent agent;
         List<Act> acts = new List<Act>();
+        List<Act> globalActs = new List<Act>();     // Flow 상에서 항상 실행되는 것들. 자체적으로 종료는 가능. 
         int index = -1;
 
         string desc = ""; 
@@ -42,13 +43,20 @@ namespace loady
                 configRepeat = Int32.Parse(((YamlScalarNode)def.Children["repeat"]).Value);
             }
 
-            // acts에 대해 act들 로딩
             var actsNode = (YamlSequenceNode)def.Children["acts"];
 
             for ( int i=0; i<actsNode.Children.Count; ++i)
             {
                 var act = new Act(i, (YamlMappingNode)actsNode.Children[i]);
                 acts.Add(act);
+            }
+
+            var alwaysNode = (YamlSequenceNode)def.Children["always"];
+
+            for (int i = 0; i < actsNode.Children.Count; ++i)
+            {
+                var act = new Act(i, (YamlMappingNode)alwaysNode.Children[i]);
+                globalActs.Add(act);
             }
         }
 
@@ -87,6 +95,13 @@ namespace loady
         public void Start()
         {
             index = 0;
+
+            acts[this.index].Begin();
+
+            foreach ( var act in globalActs )
+            {
+                act.Begin();
+            }
         }
 
         public void Do()
@@ -95,6 +110,14 @@ namespace loady
             Contract.Assert(index < acts.Count);
 
             acts[index].Do();
+
+            foreach (var act in globalActs)
+            {
+                if (act.IsInBeginState )
+                {
+                    act.Do();
+                }
+            }
         }
 
         public void On(Msg m)
@@ -103,10 +126,20 @@ namespace loady
             Contract.Assert(index < acts.Count);
 
             acts[index].On(m);
+
+            foreach (var act in globalActs)
+            {
+                if (act.IsInBeginState)
+                {
+                    act.On(m);
+                }
+            }
         }
 
         public void Next()
         {
+            acts[index].End();
+
             index++;
 
             if ( index >= acts.Count)
@@ -119,19 +152,42 @@ namespace loady
                 else
                 {
                     agent.Complete(false, "end of act reached");
+
+                    return;
                 }
             }
+
+            acts[index].Begin();
         }
 
-        public void Jump(int index)
+        public void Jump(int jumpIndex)
         {
-            if ( index >= 0 && index < acts.Count)
+            acts[this.index].End();
+
+            int absIndex = jumpIndex < 0 ? this.index + jumpIndex : this.index + jumpIndex;
+
+            if (absIndex >= 0 && absIndex < acts.Count)
             {
-                this.index = index;
+                this.index = absIndex;
+
+                acts[this.index].Begin();
             }
             else
             {
                 throw new ArgumentOutOfRangeException($"index is out of range {index}");
+            }
+        }
+
+        public void Complete()
+        {
+            if ( index >= 0 && index < acts.Count)
+            {
+                acts[index].End();
+            }
+
+            foreach ( var act in globalActs )
+            {
+                act.End();
             }
         }
     }

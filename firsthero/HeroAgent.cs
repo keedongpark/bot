@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +19,12 @@ namespace firsthero
         {
         }
 
+        public override void OnRecv(MemoryStream stream)
+        {
+            // parse protocol
+            // push msg into queue
+        }
+
         protected override void OnStart()
         {
         }
@@ -28,6 +35,7 @@ namespace firsthero
 
         protected override void OnExecuteNet()
         {
+            // pull from queue and call on function
         }
 
         protected override void OnComplete()

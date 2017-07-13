@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.IO;
 using NLog;
+using Newtonsoft.Json.Linq;
 
 namespace loady
 {
@@ -81,6 +82,8 @@ namespace loady
             this.config = config;
             this.session = new Session(this);
 
+            SetTypeName(nameof(Agent));            
+
             Contract.Assert(this.index >= 0);
             Contract.Assert(this.config.id.Length > 0);
             Contract.Assert(this.config.pw.Length > 0);
@@ -95,6 +98,7 @@ namespace loady
             this.flow = flow;
 
             Contract.Assert(this.flow != null);
+            Contract.Assert(this.flow.Acts.Count > 0);
         }
 
         /// <summary>
@@ -174,6 +178,8 @@ namespace loady
             completed = true;
             this.msg = msg;
 
+            flow.Complete();
+
             OnComplete();
 
             logger.Info($"Completed {Index}");
@@ -227,6 +233,10 @@ namespace loady
             flow.Next();
         }
 
+        /// <summary>
+        /// jump to index. 
+        /// </summary>
+        /// <param name="index">현재 인덱스에서 상대적인 값</param>
         public void jump(int index)
         {
             flow.Jump(index);
@@ -321,6 +331,11 @@ namespace loady
         public int get_int(string key)
         {
             return (int)get(key);
+        }
+
+        public JToken get_json(string key)
+        {
+            return (JToken)get(key);
         }
 
         public void clear(string key)

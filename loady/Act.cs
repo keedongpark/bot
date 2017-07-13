@@ -32,6 +32,13 @@ namespace loady
             public Msg msg;
         }
 
+        public enum State
+        {
+            None, 
+            Begin, 
+            End 
+        }
+
         // 기본 필드들
         private int index = -1;
         private YamlMappingNode def = null;
@@ -39,10 +46,14 @@ namespace loady
 
         // 스크립트 관련 필드
         private Globals globals = new Globals();
+        private Script<object> enterScript = null;
+        private Script<object> exitScript = null;
         private Script<object> doScript = null;
         private Script<object> onScript = null;
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
+
+        private State state = State.None;
 
         /// <summary>
         /// get Agent
@@ -63,6 +74,11 @@ namespace loady
         /// msg 처리 스크립트를 가짐 
         /// </summary>
         public bool HasOnScript {  get { return onScript != null; } }
+
+        /// <summary>
+        /// Has Begun  
+        /// </summary>
+        public bool IsInBeginState { get { return state == State.Begin; } }
 
         /// <summary>
         /// To copy
@@ -104,8 +120,60 @@ namespace loady
             return nact;
         }
 
+        public Result Begin()
+        {
+            Contract.Assert(state != State.Begin);
+
+            state = State.Begin;   
+
+            if (enterScript == null)
+            {
+                return Result.FailContinue;
+            }
+
+            try
+            {
+                enterScript.RunAsync(globals);
+            }
+            catch (CompilationErrorException ex)
+            {
+                logger.Error(ex);
+
+                return Result.FailStopException;
+            }
+
+            return Result.SucessContinue;
+        }
+
+        public Result End()
+        {
+            Contract.Assert(state != State.End);
+
+            state = State.End;
+
+            if (exitScript == null)
+            {
+                return Result.FailContinue;
+            }
+
+            try
+            {
+                exitScript.RunAsync(globals);
+            }
+            catch (CompilationErrorException ex)
+            {
+                logger.Error(ex);
+
+                return Result.FailStopException;
+            }
+
+            return Result.SucessContinue;
+        }
+
         public Result Do()
         {
+            Contract.Assert(state == State.Begin);
+
             if ( doScript == null)
             {
                 return Result.FailContinue;
@@ -127,6 +195,8 @@ namespace loady
 
         public Result On(Msg m)
         {
+            Contract.Assert(state == State.Begin);
+
             if ( onScript == null)
             {
                 return Result.FailContinue;
@@ -179,6 +249,38 @@ namespace loady
                 logger.Error(ex);
             }
             catch ( CompilationErrorException ex)
+            {
+                logger.Error(ex);
+                throw;
+            }
+
+            try
+            {
+                var enterNode = (YamlScalarNode)actNode["enter"];
+                enterScript = CSharpScript.Create(enterNode.Value, globalsType: typeof(Globals));
+                enterScript.Compile();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                logger.Error(ex);
+            }
+            catch (CompilationErrorException ex)
+            {
+                logger.Error(ex);
+                throw;
+            }
+
+            try
+            {
+                var exitNode = (YamlScalarNode)actNode["exit"];
+                exitScript = CSharpScript.Create(exitNode.Value, globalsType: typeof(Globals));
+                exitScript.Compile();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                logger.Error(ex);
+            }
+            catch (CompilationErrorException ex)
             {
                 logger.Error(ex);
                 throw;
