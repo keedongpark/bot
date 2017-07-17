@@ -60,7 +60,12 @@ namespace loady
             }
         }
 
-        public void Set(Agent agent)
+        /// <summary>
+        /// Bind a flow to an Agent
+        /// Must be called before executing Acts
+        /// </summary>
+        /// <param name="agent"></param>
+        public void Bind(Agent agent)
         {
             this.agent = agent;
 
@@ -70,14 +75,16 @@ namespace loady
             }
         }
 
-        public Flow Clone(Agent agent)
+        /// <summary>
+        /// Just clone acts
+        /// </summary>
+        /// <returns></returns>
+        public Flow Clone()
         {
-            Contract.Assert(agent != null);
             Contract.Assert(this.acts.Count > 0); // acts가 없는 플로우는 의미 없다.
 
             var nflow = new Flow();
 
-            nflow.agent = agent;
             nflow.desc = this.desc;
             nflow.configRepeat = this.configRepeat;
             nflow.repeated = this.repeated;
@@ -87,9 +94,21 @@ namespace loady
                 nflow.acts.Add(act.Clone(agent));
             }
 
-            // Post: this의 모든 필드와 nflow의 모든 필드가 거의 같다. 
-
             return nflow;
+        }
+
+        /// <summary>
+        ///  clone and bind agent
+        /// </summary>
+        /// <param name="agent"></param>
+        /// <returns></returns>
+        public Flow Clone(Agent agent)
+        {
+            var flow = Clone();
+
+            flow.Bind(agent);
+
+            return flow;
         }
 
         public void Start()
