@@ -14,11 +14,30 @@ namespace test.Test
         [Test]
         public void TestJsonParse()
         {
-            var tok = JToken.Parse(json);
+            var tok = JObject.Parse(json);
             var err = tok["error"];
 
             Assert.IsTrue(err.Value<int>() == 0);
             Assert.IsTrue(tok["res"][0]["ri"].Value<int>() == 1);
+        }
+
+        [Test]
+        public void TestJsonAdd()
+        {
+            var tok = JToken.Parse(json);
+
+            tok["prop"] = "value";
+
+            Assert.IsTrue(tok["prop"].Value<string>() == "value");
+
+            System.Console.WriteLine(tok.ToString());
+
+            // 그냥 참조해서 추가하면 된다. 
+
+            // AddAfterSelf(new JProperty(...)) 로 추가하려면 좀 더 맞춰야 한다. 
+
+            // http://www.newtonsoft.com/json/help/html/ModifyJson.htm
+            // - 자세한 예시들이 있다.  
         }
 
         const string json = @"

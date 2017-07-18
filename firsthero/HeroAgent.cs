@@ -19,7 +19,7 @@ namespace firsthero
         {
         }
 
-        public override void OnRecv(MemoryStream stream)
+        protected override void OnRecv(MemoryStream stream)
         {
             // parse protocol
             // push msg into queue

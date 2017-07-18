@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.IO;
 using NLog;
@@ -22,6 +23,7 @@ namespace loady
         int executeCount = 0;
         string typeName = "loady.Agent";
         Session session;
+        ConcurrentQueue<Msg> recvQ = new ConcurrentQueue<Msg>();
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -62,6 +64,16 @@ namespace loady
         /// get execute count
         /// </summary>
         public int ExecuteCount { get { return executeCount; } }
+
+        /// <summary>
+        /// get session
+        /// </summary>
+        public Session Session { get { return session; } }
+
+        /// <summary>
+        /// get recv queue
+        /// </summary>
+        public ConcurrentQueue<Msg> RecvQueue { get { return recvQ; } }
 
         /// <summary>
         /// 테스트 용도로만 사용
@@ -140,7 +152,13 @@ namespace loady
                 return;
             }
 
-            OnExecuteNet();
+            Msg m;
+
+            // process messages first
+            while (recvQ.TryDequeue(out m))
+            {
+                flow.On(m);
+            }
 
             Contract.Assert(!IsCompleted);
 
@@ -185,18 +203,38 @@ namespace loady
             logger.Info($"Completed {Index}");
         }
 
+        public Msg Peek()
+        {
+            Msg m;
+
+            if( recvQ.TryPeek(out m) )
+            {
+                return m;
+            }
+
+            return null;
+        }
+
         /// <summary>
         ///  
         /// </summary>
         /// <param name="stream"></param>
-        public virtual void OnRecv(MemoryStream stream)
+        public void Recv(MemoryStream stream)
         {
-            // stream에서 읽어서 처리하고 
-            // 위치를 조절해서 계속 될 수 있도록 함
-            // 성능 보다는 간결함이 중요하니 복사해서 처리
+            OnRecv(stream);
 
             // 처음으로 이동 시킴
             stream.Seek(0, SeekOrigin.Begin);
+        }
+
+        protected virtual void OnRecv(MemoryStream stream)
+        {
+            // parse and push msg into queue
+        }
+
+        protected virtual void OnSend(Msg m)
+        {
+            // make into bytes and send it
         }
 
         #region Override Functions 
@@ -245,6 +283,11 @@ namespace loady
         public void fail(string msg = "")
         {
             Complete(true, $"fail from script w/ {msg}");
+        }
+
+        public void complete(string msg="")
+        {
+            Complete(false, msg);
         }
 
         public object call(string method, params object[] args)
@@ -342,6 +385,28 @@ namespace loady
         {
             dict.Remove(key);
         }
+
+        public void connect(string ip, ushort port)
+        {
+            Session.Connect(ip, port);
+        }
+
+        public void send(loady.Msg m)
+        {
+            OnSend(m);
+        }
+
+        public bool is_connected()
+        {
+            return Session.IsConnected();
+        }
+
+        public void disconnect()
+        {
+            Session.Disconnect();
+        }
         #endregion
     }
 }
+
+

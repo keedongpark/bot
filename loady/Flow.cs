@@ -51,7 +51,7 @@ namespace loady
                 acts.Add(act);
             }
 
-            var alwaysNode = (YamlSequenceNode)def.Children["always"];
+            var alwaysNode = (YamlSequenceNode)def.Children["globals"];
 
             for (int i = 0; i < actsNode.Children.Count; ++i)
             {

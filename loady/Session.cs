@@ -12,6 +12,10 @@ namespace loady
     /// <summary>
     /// 간단한 네트워크 연결. Agent 단위로 사용.
     /// 바이트 송수신만 담당하고 Agent에서 프로토콜 처리.  
+    ///
+    /// 가정: 
+    ///  - Agent는 하나의 쓰레드에서만 실행된다. 
+    ///  - Agent의 큐는 Thread-Safe하다.  
     /// </summary>
     public class Session
     {
@@ -35,6 +39,7 @@ namespace loady
             Contract.Assert(agent != null);
 
             this.agent = agent;
+            this.accumulStream = sendStream1;
         }
 
         public bool Connect(string host, ushort port)
@@ -44,8 +49,7 @@ namespace loady
             this.host = host;
             this.port = port;
 
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(host);
-            IPAddress ipAddress = ipHostInfo.AddressList[0];
+            IPAddress ipAddress = IPAddress.Parse(host);
             IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
 
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -69,7 +73,12 @@ namespace loady
 
         public bool Send(byte[] payload)
         {
-            accumulStream.Write(payload, 0, payload.Length);
+            return Send(payload, payload.Length);
+        }
+
+        public bool Send(byte[] payload, int length)
+        {
+            accumulStream.Write(payload, 0, length);
 
             RequestSend();
 
@@ -137,6 +146,8 @@ namespace loady
             {
                 Socket client = (Socket)ar.AsyncState;
                 client.EndConnect(ar);
+
+                RequestRecv();
             }
             catch (Exception ex)
             {
@@ -157,7 +168,7 @@ namespace loady
                 {
                     recvStream.Write(recvBuffer, 0, bytesRead);
 
-                    agent.OnRecv(recvStream);
+                    agent.Recv(recvStream);
                 }
 
                 RequestRecv();
