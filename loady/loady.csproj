@@ -191,6 +191,7 @@
     <Compile Include="Act.cs" />
     <Compile Include="Agent.cs" />
     <Compile Include="DefaultModule.cs" />
+    <Compile Include="Mods.cs" />
     <Compile Include="Module.cs" />
     <Compile Include="Contract.cs" />
     <Compile Include="Flow.cs" />

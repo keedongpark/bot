@@ -12,11 +12,12 @@ namespace loady
     public class Loader
     {
         List<Agent> agents = new List<Agent>();
-        List<Runner> runers = new List<Runner>();
+        List<Runner> runners = new List<Runner>();
         Flow sharedFlow;
 
         int runnerCount = 1;
-        string prefix = "test_";
+        string accountPrefix = "test_";
+        string passwordPrefix = "test_";
         int beginIndex = 0;
         int agentCount = 1;
         Module module;
@@ -38,6 +39,8 @@ namespace loady
 
             // http://www.yamllint.com/
             // to verify 
+            // - replacing tab with spaces is safe mostly.
+            // - keep indentation same for each key 
 
             var yaml = new YamlStream();
             yaml.Load(sr);
@@ -50,30 +53,64 @@ namespace loady
 
             // load agents
             var agentsNode = (YamlMappingNode)root.Children["agents"];
-            var prefixNode = (YamlScalarNode)agentsNode.Children["prefix"];
+            var accountPrefixNode = (YamlScalarNode)agentsNode.Children["account_prefix"];
+            var passwordPrefixNode = (YamlScalarNode)agentsNode.Children["password_prefix"];
             var beginNode  = (YamlScalarNode)agentsNode.Children["begin"];
             var countNode  = (YamlScalarNode)agentsNode.Children["count"];
             var runnersNode = (YamlScalarNode)agentsNode.Children["runners"];
-            var moduleNode = (YamlScalarNode)agentsNode.Children["module"];
 
-            prefix = prefixNode.Value;
+            accountPrefix = accountPrefixNode.Value;
+            passwordPrefix = passwordPrefixNode.Value;
             beginIndex = Int32.Parse(beginNode.Value);
             agentCount = Int32.Parse(countNode.Value);
             runnerCount = Int32.Parse(runnersNode.Value);
 
             CreateAgents(agentsNode);
+            CreateRunners();
 
             return Agents.Count > 0;
         }
 
+        public bool LoadMod(string filename)
+        {
+            return Mods.Inst().Load(filename);
+        }
+
         public void Start()
         {
-            // starts all agents
+            foreach (var runner in runners)
+            {
+                runner.Start();
+            }
+        }
+
+        public void Wait()
+        {
+            bool completed = false;
+
+            while ( !completed )
+            {
+                completed = true; // try to exit
+
+                foreach (var runner in runners)
+                {
+                    if (!runner.IsCompleted())
+                    {
+                        completed = false; // prevent exit
+                        break; 
+                    }
+                }
+
+                System.Threading.Thread.Sleep(100);
+            }
         }
 
         public void Stop()
         {
-            // stop all agents
+            foreach (var runner in runners)
+            {
+                runner.Stop();
+            }
         }
 
         void CreateAgents(YamlMappingNode agentsNode)
@@ -85,13 +122,32 @@ namespace loady
             }
         }
 
+        void CreateRunners()
+        {
+            for ( int i=0; i<runnerCount; ++i)
+            {
+                runners.Add(new Runner());
+            }
+
+            for ( int i=0; i<runnerCount; ++i)
+            {
+                foreach ( var agent in agents )
+                {
+                    var idx = agent.Index % runnerCount;
+                    runners[idx].Add(agent);
+                }
+            }
+        }
+
         Agent CreateAgent(int index, YamlMappingNode agentsNode)
         {
             var agentKey = $"agent_{index}";
             var config = new Agent.Config();
 
-            config.id = $"{prefix}{index}";
-            config.pw = $"{prefix}{index}";
+            var idx = index.ToString("000");
+
+            config.id = $"{accountPrefix}{idx}";
+            config.pw = $"{passwordPrefix}{idx}";
 
             if ( agentsNode.Children.ContainsKey(agentKey) )
             {

@@ -134,6 +134,11 @@ namespace loady
             flow.Start();
 
             OnStart();
+
+            if ( flow.Acts.Count == 0)
+            {
+                Complete(false, "No acts defined in flow");
+            }
         }
 
         /// <summary>

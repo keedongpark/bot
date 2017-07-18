@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.RepresentationModel;
-using loady;
+using NLog;
 
 namespace loady
 {
@@ -18,6 +18,8 @@ namespace loady
         string desc = ""; 
         int configRepeat = 0; // -1 : infinite, 0: once, else: count
         int repeated = 0;
+
+        Logger logger = LogManager.GetCurrentClassLogger();
 
         public int Index { get { return index; } }
 
@@ -33,32 +35,35 @@ namespace loady
 
         public Flow(YamlMappingNode def)
         {
-            if ( def.Children.ContainsKey("desc"))
+            if (def.Children.ContainsKey("desc"))
             {
                 desc = ((YamlScalarNode)def.Children["desc"]).Value;
             }
 
-            if ( def.Children.ContainsKey("repeat"))
+            if (def.Children.ContainsKey("repeat"))
             {
                 configRepeat = Int32.Parse(((YamlScalarNode)def.Children["repeat"]).Value);
             }
 
             var actsNode = (YamlSequenceNode)def.Children["acts"];
 
-            for ( int i=0; i<actsNode.Children.Count; ++i)
+            for (int i = 0; i < actsNode.Children.Count; ++i)
             {
                 var act = new Act(i, (YamlMappingNode)actsNode.Children[i]);
                 acts.Add(act);
             }
 
-            var alwaysNode = (YamlSequenceNode)def.Children["globals"];
-
-            for (int i = 0; i < actsNode.Children.Count; ++i)
+            if (def.Children.ContainsKey("globals"))
             {
-                var act = new Act(i, (YamlMappingNode)alwaysNode.Children[i]);
-                globalActs.Add(act);
+                var alwaysNode = (YamlSequenceNode)def.Children["globals"];
+
+                for (int i = 0; i < actsNode.Children.Count; ++i)
+                {
+                    var act = new Act(i, (YamlMappingNode)alwaysNode.Children[i]);
+                    globalActs.Add(act);
+                }
             }
-        }
+        } 
 
         /// <summary>
         /// Bind a flow to an Agent

@@ -17,6 +17,11 @@ namespace loady
         int sleep = 1;
         Thread thread;
 
+        /// <summary>
+        /// Get Agents count
+        /// </summary>
+        public int Count {  get { return agents.Count; } }
+
         public Runner(int sleep = 1)
         {
             this.sleep = sleep;
@@ -46,7 +51,7 @@ namespace loady
             return thread.IsAlive;
         }
 
-        public void Run()
+        private void Run()
         {
             while ( !stop )
             {
@@ -57,6 +62,19 @@ namespace loady
 
                 Thread.Sleep(sleep);
             }
+        }
+
+        public bool IsCompleted()
+        {
+            foreach ( var agent in agents )
+            {
+                if ( !agent.IsCompleted )
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void Stop()

@@ -46,8 +46,8 @@ namespace loady
 
         // 스크립트 관련 필드
         private Globals globals = new Globals();
-        private Script<object> enterScript = null;
-        private Script<object> exitScript = null;
+        private Script<object> beginScript = null;
+        private Script<object> endScript = null;
         private Script<object> doScript = null;
         private Script<object> onScript = null;
 
@@ -80,6 +80,8 @@ namespace loady
         /// </summary>
         public bool IsInBeginState { get { return state == State.Begin; } }
 
+        public string Name { get; private set; }
+
         /// <summary>
         /// To copy
         /// </summary>
@@ -97,6 +99,8 @@ namespace loady
             this.index = index;
             this.def = def;
 
+            LoadOptions();
+
             BuildScripts();
         }
 
@@ -111,13 +115,25 @@ namespace loady
         {
             var nact = new Act();
 
-            nact.index = this.index;
-            nact.def = this.def;
             nact.Set(agent);
-            nact.doScript = this.doScript;
-            nact.onScript = this.onScript;
+
+            nact.index          = this.index;
+            nact.def            = this.def;
+            nact.beginScript    = this.beginScript;
+            nact.endScript      = this.endScript;
+            nact.doScript       = this.doScript;
+            nact.onScript       = this.onScript;
 
             return nact;
+        }
+
+        /// <summary>
+        /// Sometimes we need to change index
+        /// </summary>
+        /// <param name="index"></param>
+        public void Reindex(int index)
+        {
+            this.index = index;
         }
 
         public Result Begin()
@@ -126,18 +142,19 @@ namespace loady
 
             state = State.Begin;   
 
-            if (enterScript == null)
+            if (beginScript == null)
             {
                 return Result.FailContinue;
             }
 
             try
             {
-                enterScript.RunAsync(globals);
+                beginScript.RunAsync(globals);
             }
             catch (CompilationErrorException ex)
             {
-                logger.Error(ex);
+                logger.Error($"Act {Name} Exception: {ex}");
+                logger.Error($"Code> {beginScript.Code}");
 
                 return Result.FailStopException;
             }
@@ -151,18 +168,19 @@ namespace loady
 
             state = State.End;
 
-            if (exitScript == null)
+            if (endScript == null)
             {
                 return Result.FailContinue;
             }
 
             try
             {
-                exitScript.RunAsync(globals);
+                endScript.RunAsync(globals);
             }
             catch (CompilationErrorException ex)
             {
-                logger.Error(ex);
+                logger.Error($"Act {Name} Exception: {ex}");
+                logger.Error($"Code> {endScript.Code}");
 
                 return Result.FailStopException;
             }
@@ -185,7 +203,8 @@ namespace loady
             }
             catch ( CompilationErrorException ex)
             {
-                logger.Error(ex);
+                logger.Error($"Act {Name} Exception: {ex}");
+                logger.Error($"Code> {doScript.Code}");
 
                 return Result.FailStopException;
             }
@@ -210,12 +229,29 @@ namespace loady
             }
             catch (CompilationErrorException ex)
             {
-                logger.Error(ex);
+                logger.Error($"Act {Name} Exception: {ex}");
+                logger.Error($"Code> {onScript.Code}");
 
                 return Result.FailStopException;
             }
 
             return Result.SucessContinue;
+        }
+
+        private void LoadOptions()
+        {
+            var actNode = (YamlMappingNode)this.def["act"];
+
+            try
+            {
+                var nameNode = (YamlScalarNode)actNode["name"];
+                Name = nameNode.Value;
+            }
+            catch ( KeyNotFoundException )
+            {
+                Name = "Unknown";
+                logger.Error($"Act name not defined");
+            }
         }
 
         private void BuildScripts()
@@ -224,13 +260,33 @@ namespace loady
 
             try
             {
+                var useNode = (YamlScalarNode)actNode["use"];
+                var fullName = useNode.Value;
+                var act = Mods.Inst().Get(fullName);
+
+                if ( act != null )
+                {
+                    CopyScriptsFrom(act);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"use must have a valid act in module {fullName}. Current {Name}");
+                }
+            }
+            catch ( KeyNotFoundException )
+            {
+                //
+            }
+
+            try
+            {
                 var doNode = (YamlScalarNode)actNode["do"];
                 doScript = CSharpScript.Create(doNode.Value, globalsType: typeof(Globals));
                 doScript.Compile();
             }
-            catch ( KeyNotFoundException ex)
+            catch ( KeyNotFoundException )
             {
-                logger.Error(ex);
+                logger.Trace($"Act {Name} do not defined");
             }
             catch ( CompilationErrorException ex)
             {
@@ -244,9 +300,9 @@ namespace loady
                 onScript = CSharpScript.Create(onNode.Value, globalsType: typeof(Globals));
                 onScript.Compile();
             }
-            catch ( KeyNotFoundException ex)
+            catch ( KeyNotFoundException )
             {
-                logger.Error(ex);
+                logger.Trace($"Act {Name} on not defined");
             }
             catch ( CompilationErrorException ex)
             {
@@ -256,13 +312,13 @@ namespace loady
 
             try
             {
-                var enterNode = (YamlScalarNode)actNode["enter"];
-                enterScript = CSharpScript.Create(enterNode.Value, globalsType: typeof(Globals));
-                enterScript.Compile();
+                var enterNode = (YamlScalarNode)actNode["begin"];
+                beginScript = CSharpScript.Create(enterNode.Value, globalsType: typeof(Globals));
+                beginScript.Compile();
             }
-            catch (KeyNotFoundException ex)
+            catch (KeyNotFoundException )
             {
-                logger.Error(ex);
+                logger.Trace($"Begin not defined {Name}");
             }
             catch (CompilationErrorException ex)
             {
@@ -272,13 +328,13 @@ namespace loady
 
             try
             {
-                var exitNode = (YamlScalarNode)actNode["exit"];
-                exitScript = CSharpScript.Create(exitNode.Value, globalsType: typeof(Globals));
-                exitScript.Compile();
+                var exitNode = (YamlScalarNode)actNode["end"];
+                endScript = CSharpScript.Create(exitNode.Value, globalsType: typeof(Globals));
+                endScript.Compile();
             }
-            catch (KeyNotFoundException ex)
+            catch (KeyNotFoundException )
             {
-                logger.Error(ex);
+                logger.Trace($"End not defined {Name}");
             }
             catch (CompilationErrorException ex)
             {
@@ -286,5 +342,13 @@ namespace loady
                 throw;
             }
         } 
+
+        private void CopyScriptsFrom(Act other)
+        {
+            beginScript    = other.beginScript;
+            endScript      = other.endScript;
+            doScript       = other.doScript;
+            onScript       = other.onScript;
+        }
     }
 }
