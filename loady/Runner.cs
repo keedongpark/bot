@@ -29,16 +29,26 @@ namespace loady
             Contract.Assert(this.sleep > 0);
         }
 
+        /// <summary>
+        /// Agent를 추가. 단, Start 호출 전에만 가능.
+        /// </summary>
+        /// <param name="agent"></param>
         public void Add(Agent agent)
         {
             Contract.Assert(agent != null);
+            Contract.Assert(thread == null || thread.IsAlive == false);
 
             agents.Add(agent);
         }
 
+        /// <summary>
+        /// Start all agents and starts a thread to execute agents in the thread.
+        /// </summary>
+        /// <returns>true if thread is alive</returns>
         public bool Start()
         {
-            Contract.Assert(agents.Count > 0);
+            Contract.Assert(thread == null || thread.IsAlive == false);
+            Contract.Assert(stop == false);
 
             foreach ( var agent in agents )
             {
@@ -51,6 +61,9 @@ namespace loady
             return thread.IsAlive;
         }
 
+        /// <summary>
+        /// 실행 함수. 
+        /// </summary>
         private void Run()
         {
             while ( !stop )
@@ -64,6 +77,10 @@ namespace loady
             }
         }
 
+        /// <summary>
+        /// 모든 에이전트가 완료 했는 지 확인
+        /// </summary>
+        /// <returns></returns>
         public bool IsCompleted()
         {
             foreach ( var agent in agents )
@@ -77,6 +94,9 @@ namespace loady
             return true;
         }
 
+        /// <summary>
+        /// 실행 쓰레드를 종료
+        /// </summary>
         public void Stop()
         {
             Contract.Assert(thread != null);

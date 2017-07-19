@@ -198,6 +198,7 @@
     <Compile Include="Loader.cs" />
     <Compile Include="Msg.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Report.cs" />
     <Compile Include="Runner.cs" />
     <Compile Include="Session.cs" />
   </ItemGroup>

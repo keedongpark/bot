@@ -14,6 +14,10 @@ namespace loady
             return mods;
         }
 
+        private Mods()
+        {
+        }
+
         private Dictionary<string, Act> acts = new Dictionary<string, Act>();
 
         public bool Load(string filename)

@@ -21,6 +21,7 @@ namespace loady
         int beginIndex = 0;
         int agentCount = 1;
         Module module;
+        string reportFilename;
 
         Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -58,12 +59,14 @@ namespace loady
             var beginNode  = (YamlScalarNode)agentsNode.Children["begin"];
             var countNode  = (YamlScalarNode)agentsNode.Children["count"];
             var runnersNode = (YamlScalarNode)agentsNode.Children["runners"];
+            var reportNode = (YamlScalarNode)agentsNode.Children["report"];
 
             accountPrefix = accountPrefixNode.Value;
             passwordPrefix = passwordPrefixNode.Value;
             beginIndex = Int32.Parse(beginNode.Value);
             agentCount = Int32.Parse(countNode.Value);
             runnerCount = Int32.Parse(runnersNode.Value);
+            reportFilename = reportNode.Value;
 
             CreateAgents(agentsNode);
             CreateRunners();
@@ -78,6 +81,19 @@ namespace loady
 
         public void Start()
         {
+            Report.Inst().Start(reportFilename);
+
+            Msg m = new Msg();
+
+            m.json["agent"] = "agent";
+            m.json["category"] = "category";
+            m.json["name"] = "name";
+            m.json["begin"] = "begin";
+            m.json["end"] = "end";
+            m.json["elapsed"] = "elapsed";
+
+            Report.Inst().Notify(m);
+
             foreach (var runner in runners)
             {
                 runner.Start();
@@ -101,8 +117,13 @@ namespace loady
                     }
                 }
 
-                System.Threading.Thread.Sleep(100);
+                Report.Inst().Execute();
+
+                System.Threading.Thread.Sleep(10);
             }
+
+            // Wait exiting...
+            System.Threading.Thread.Sleep(1000);
         }
 
         public void Stop()
@@ -111,13 +132,15 @@ namespace loady
             {
                 runner.Stop();
             }
+
+            Report.Inst().Stop();
         }
 
         void CreateAgents(YamlMappingNode agentsNode)
         {
             for ( int i=0; i<agentCount; ++i)
             {
-                var agent = CreateAgent(i, agentsNode);
+                var agent = CreateAgent(beginIndex+i, agentsNode);
                 agents.Add(agent);
             }
         }
@@ -134,7 +157,10 @@ namespace loady
                 foreach ( var agent in agents )
                 {
                     var idx = agent.Index % runnerCount;
-                    runners[idx].Add(agent);
+                    if (idx == i)
+                    {
+                        runners[idx].Add(agent);
+                    }
                 }
             }
         }

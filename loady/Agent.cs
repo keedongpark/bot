@@ -35,6 +35,9 @@ namespace loady
 
         Config config;
 
+        DateTime beginTime;
+        DateTime endTime;
+
         /// <summary>
         /// get index 
         /// </summary>
@@ -131,6 +134,8 @@ namespace loady
         {
             Contract.Assert(flow != null);
 
+            beginTime = DateTime.Now;
+
             flow.Start();
 
             OnStart();
@@ -152,11 +157,6 @@ namespace loady
             Contract.Assert(flow != null);
             Contract.Assert(index >= 0);
 
-            if ( IsCompleted )
-            {
-                return;
-            }
-
             Msg m;
 
             // process messages first
@@ -164,8 +164,6 @@ namespace loady
             {
                 flow.On(m);
             }
-
-            Contract.Assert(!IsCompleted);
 
             ++executeCount;
 
@@ -197,6 +195,11 @@ namespace loady
 
         public void Complete(bool fail, string msg)
         {
+            if ( completed )
+            {
+                return;
+            }
+
             failed = fail;
             completed = true;
             this.msg = msg;
@@ -205,7 +208,28 @@ namespace loady
 
             OnComplete();
 
-            logger.Info($"Completed {Index}");
+            endTime = DateTime.Now;
+
+            if (!failed)
+            {
+                logger.Info($"Agent {Index}/{config.id} completed with {msg}");
+            }
+            else
+            {
+                logger.Info($"Agent {Index}/{config.id} failed with {msg}");
+            }
+
+            Msg m = new Msg();
+
+            m.json["agent"] = get_id();
+            m.json["category"] = "agent";
+            m.json["name"] = get_id();
+            m.json["begin"] = beginTime.ToString();
+            m.json["end"] = endTime.ToString();
+            m.json["elapsed"] = (endTime - beginTime).TotalMilliseconds;
+
+            Report.Inst().Notify(m);
+
         }
 
         public Msg Peek()
@@ -399,6 +423,16 @@ namespace loady
         public void send(loady.Msg m)
         {
             OnSend(m);
+        }
+
+        public string get_id()
+        {
+            return config.id;
+        }
+
+        public string get_password()
+        {
+            return config.pw;
         }
 
         public bool is_connected()

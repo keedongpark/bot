@@ -54,6 +54,8 @@ namespace loady
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
         private State state = State.None;
+        private DateTime beginTime;
+        private DateTime endTime;
 
         /// <summary>
         /// get Agent
@@ -80,6 +82,9 @@ namespace loady
         /// </summary>
         public bool IsInBeginState { get { return state == State.Begin; } }
 
+        /// <summary>
+        /// Get name
+        /// </summary>
         public string Name { get; private set; }
 
         /// <summary>
@@ -104,6 +109,10 @@ namespace loady
             BuildScripts();
         }
 
+        /// <summary>
+        /// Set Agent to execute with.
+        /// </summary>
+        /// <param name="agent"></param>
         public void Set(Agent agent)
         {
             this.agent = agent;
@@ -111,6 +120,11 @@ namespace loady
             this.globals.msg = null;
         }
 
+        /// <summary>
+        /// Clone to the Agent.
+        /// </summary>
+        /// <param name="agent"></param>
+        /// <returns></returns>
         public Act Clone(Agent agent)
         {
             var nact = new Act();
@@ -119,6 +133,7 @@ namespace loady
 
             nact.index          = this.index;
             nact.def            = this.def;
+            nact.Name           = this.Name;
             nact.beginScript    = this.beginScript;
             nact.endScript      = this.endScript;
             nact.doScript       = this.doScript;
@@ -128,28 +143,28 @@ namespace loady
         }
 
         /// <summary>
-        /// Sometimes we need to change index
+        /// Run Begin Script
         /// </summary>
-        /// <param name="index"></param>
-        public void Reindex(int index)
-        {
-            this.index = index;
-        }
-
+        /// <returns></returns>
         public Result Begin()
         {
-            Contract.Assert(state != State.Begin);
-
-            state = State.Begin;   
-
-            if (beginScript == null)
+            if ( state == State.Begin)
             {
                 return Result.FailContinue;
             }
 
+            state = State.Begin;
+
+            beginTime = DateTime.Now;
+
+            if (beginScript == null)
+            {
+                return Result.SucessContinue;
+            }
+
             try
             {
-                beginScript.RunAsync(globals);
+                RunScript(beginScript);
             }
             catch (CompilationErrorException ex)
             {
@@ -162,11 +177,22 @@ namespace loady
             return Result.SucessContinue;
         }
 
+        /// <summary>
+        /// Run End Script
+        /// </summary>
+        /// <returns></returns>
         public Result End()
         {
-            Contract.Assert(state != State.End);
+            if ( state == State.End)
+            {
+                return Result.FailContinue;
+            }
 
             state = State.End;
+
+            endTime = DateTime.Now;
+
+            ReportElapsed();
 
             if (endScript == null)
             {
@@ -175,7 +201,7 @@ namespace loady
 
             try
             {
-                endScript.RunAsync(globals);
+                RunScript(endScript);
             }
             catch (CompilationErrorException ex)
             {
@@ -185,9 +211,14 @@ namespace loady
                 return Result.FailStopException;
             }
 
+
             return Result.SucessContinue;
         }
 
+        /// <summary>
+        /// Run Do Script
+        /// </summary>
+        /// <returns></returns>
         public Result Do()
         {
             Contract.Assert(state == State.Begin);
@@ -199,7 +230,7 @@ namespace loady
 
             try
             {
-                doScript.RunAsync(globals);
+                RunScript(doScript);
             }
             catch ( CompilationErrorException ex)
             {
@@ -212,6 +243,11 @@ namespace loady
             return Result.SucessContinue;
         }
 
+        /// <summary>
+        /// Run On Script to handle a message
+        /// </summary>
+        /// <param name="m"></param>
+        /// <returns></returns>
         public Result On(Msg m)
         {
             Contract.Assert(state == State.Begin);
@@ -225,7 +261,7 @@ namespace loady
 
             try
             {
-                onScript.RunAsync(globals);
+                RunScript(onScript);
             }
             catch (CompilationErrorException ex)
             {
@@ -236,6 +272,33 @@ namespace loady
             }
 
             return Result.SucessContinue;
+        }
+
+        private void ReportElapsed()
+        {
+            Msg m = new Msg();
+
+            m.json["agent"] = agent.get_id();
+            m.json["category"] = "act";
+            m.json["name"] = Name;
+            m.json["begin"] = beginTime.ToString();
+            m.json["end"] = endTime.ToString();
+            m.json["elapsed"] = (endTime - beginTime).TotalMilliseconds;
+
+            Report.Inst().Notify(m);
+        }
+
+        private void RunScript(Script<object> script)
+        {
+            var options = ScriptOptions.Default
+                .WithReferences(
+                    typeof(Newtonsoft.Json.Linq.JToken).Assembly,
+                    typeof(loady.Msg).Assembly)
+                .WithImports(
+                    "Newtonsoft.Json.Linq",
+                    "loady");
+
+            script.WithOptions(options).RunAsync(globals);
         }
 
         private void LoadOptions()

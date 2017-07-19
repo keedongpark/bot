@@ -133,7 +133,10 @@ namespace loady
             Contract.Assert(index >= 0);
             Contract.Assert(index < acts.Count);
 
-            acts[index].Do();
+            if (acts[index].IsInBeginState)
+            {
+                acts[index].Do();
+            }
 
             foreach (var act in globalActs)
             {
@@ -149,7 +152,10 @@ namespace loady
             Contract.Assert(index >= 0);
             Contract.Assert(index < acts.Count);
 
-            acts[index].On(m);
+            if (acts[index].IsInBeginState)
+            {
+                acts[index].On(m);
+            }
 
             foreach (var act in globalActs)
             {
