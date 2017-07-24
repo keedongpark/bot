@@ -71,6 +71,8 @@ namespace loady
             CreateAgents(agentsNode);
             CreateRunners();
 
+            Builder.Inst().Build(Path.GetFullPath(filename));
+
             return Agents.Count > 0;
         }
 

@@ -17,7 +17,7 @@ namespace test.Test
         {
             var loader = new Loader(new DefaultModule());
 
-            var path = @"D:\projects\bot\test\test\Test\";
+            var path = @"c:\projects\bot\test\test\Test\";
 
             Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
             Assert.IsTrue(loader.Agents.Count == 100);
@@ -32,7 +32,7 @@ namespace test.Test
         {
             var loader = new Loader(new DefaultModule());
 
-            var path = @"D:\projects\bot\test\test\Test\";
+            var path = @"c:\projects\bot\test\test\Test\";
 
             Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
             Assert.IsTrue(loader.Agents.Count == 100);
@@ -60,7 +60,7 @@ namespace test.Test
         {
             var loader = new Loader(new DefaultModule());
 
-            var path = @"D:\projects\bot\test\test\Test\";
+            var path = @"c:\projects\bot\test\test\Test\";
 
             Assert.IsTrue(loader.Load($"{path}test_pass.yaml"));
             Assert.IsTrue(loader.Agents.Count == 100);

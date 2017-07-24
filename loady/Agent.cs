@@ -318,6 +318,11 @@ namespace loady
         {
             Complete(false, msg);
         }
+        
+        public void noop()
+        {
+            
+        }
 
         public object call(string method, params object[] args)
         {

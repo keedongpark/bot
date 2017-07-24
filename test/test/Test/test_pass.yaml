@@ -4,16 +4,19 @@
 
 agents: 
   module: firsthero
-  prefix: test_ 
-  begin : 10 
+  account_prefix: test_ 
+  password_prefix: test_ 
+  begin : 0 
   count : 100
   runners: 5
+  report: result.csv
  
   agent_2: 
     flow: # override flow definition 
         desc: test fail case for some agents
         acts: 
           - act: 
+              name: test3
               do: > 
                 if ( agent.ExecuteCount == 2 )
                 {
@@ -25,12 +28,14 @@ flow:
   repeat: 1000
   acts:  
     - act: 
+        name: test1
         do: > 
-          agent.next()
+          agent.next();
         on: > 
-          agent.noop()
+          agent.noop();
     - act: 
+        name: test2
         do: > 
-          agent.next()
+          agent.next();
         on: > 
-          agent.noop()
+          agent.noop();
