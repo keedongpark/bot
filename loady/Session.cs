@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
+using System.Threading;
+using NLog;
 
 namespace loady
 {
@@ -28,11 +26,12 @@ namespace loady
 
         MemoryStream recvStream = new MemoryStream();
 
-        volatile bool sending = false;
+        volatile Int32 sending = 0;
         MemoryStream sendStream1 = new MemoryStream();
         MemoryStream sendStream2 = new MemoryStream();
         MemoryStream accumulStream;
         MemoryStream sendStream;
+        Logger logger = LogManager.GetCurrentClassLogger();
 
         public Session(Agent agent)
         {
@@ -107,13 +106,17 @@ namespace loady
 
         void RequestSend()
         {
-            if ( sending )
+            if ( Interlocked.Exchange(ref sending, 1) == 1)
             {
                 return;
             }
 
-            if (accumulStream.Length == 0)
+            // sending == 1 : Exchange set it to 1
+
+            if (accumulStream.Position == 0)
             {
+                Interlocked.Exchange(ref sending, 0);
+
                 return;
             }
 
@@ -122,6 +125,8 @@ namespace loady
             try
             {
                 var buf = sendStream.GetBuffer();
+
+                logger.Debug($"Sending. {sendStream.Position}");
 
                 // Begin sending the data to the remote device.
                 socket.BeginSend(
@@ -135,6 +140,8 @@ namespace loady
             catch ( Exception ex)
             {
                 agent.fail($"session error {ex}");
+
+                Interlocked.Exchange(ref sending, 0);
 
                 Disconnect();
             }
@@ -166,6 +173,8 @@ namespace loady
 
                 if (bytesRead > 0)
                 {
+                    logger.Debug($"Recv. Bytes: {bytesRead} Stream: {recvStream.Position}");
+
                     recvStream.Write(recvBuffer, 0, bytesRead);
 
                     agent.Recv(recvStream);
@@ -183,7 +192,7 @@ namespace loady
 
         void OnSendCompleted(IAsyncResult ar)
         {
-            sending = false;
+            Interlocked.Exchange(ref sending, 0);
 
             try
             {

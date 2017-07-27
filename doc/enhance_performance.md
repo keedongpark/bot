@@ -42,3 +42,6 @@ http://josephwoodward.co.uk/2016/12/in-memory-c-sharp-compilation-using-roslyn
         assembly = Assembly.Load(stream.GetBuffer());
     }
 
+	22JArray item = (JArray)channel["item"];
+23item.Add("Item 1");
+24item.Add("Item 2");

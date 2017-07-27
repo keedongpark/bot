@@ -153,6 +153,8 @@ namespace loady
         /// <returns></returns>
         public Result Begin()
         {
+            logger.Info($"Begin {Name}");
+
             if ( state == State.Begin)
             {
                 return Result.FailContinue;
@@ -173,6 +175,8 @@ namespace loady
         /// <returns></returns>
         public Result End()
         {
+            logger.Info($"End {Name}");
+
             if ( state == State.End)
             {
                 return Result.FailContinue;
@@ -210,6 +214,8 @@ namespace loady
         public Result On(Msg m)
         {
             Contract.Assert(state == State.Begin);
+
+            logger.Trace($"Name: {Name}, Msg: {m.json}");
 
             this.globals.msg = m;
 
@@ -258,18 +264,6 @@ namespace loady
         private void LoadScripts()
         {
             var actNode = (YamlMappingNode)this.def["act"];
-
-            try
-            {
-                var useNode = (YamlScalarNode)actNode["use"];
-                var fullName = useNode.Value;
-
-                // use fullName to invoke functions
-            }
-            catch ( KeyNotFoundException )
-            {
-                //
-            }
 
             try
             { 

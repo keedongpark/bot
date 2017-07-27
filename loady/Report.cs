@@ -33,7 +33,7 @@ namespace loady
 
         public void Start(string filename)
         {
-            fs = File.Open(filename, FileMode.OpenOrCreate);
+            fs = File.Open(filename, FileMode.Append);
 
             // excel doesn't recognize utf8 file automatically. 
             Encoding vUTF8Encoding = new UTF8Encoding(true);

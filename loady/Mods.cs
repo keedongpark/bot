@@ -37,6 +37,19 @@ namespace loady
                 Load(modName, (YamlMappingNode)actsNode.Children[i]);
             }
 
+            if (rootNode.Children.ContainsKey("funcs"))
+            {
+                var funcsNode = (YamlSequenceNode)rootNode.Children["funcs"];
+
+                for (int i = 0; i < funcsNode.Children.Count; ++i)
+                {
+                    var funcNode = (YamlMappingNode)funcsNode.Children[i];
+                    var funcBody = funcNode.Children["func"];
+
+                    LoadFunc(modName, ((YamlScalarNode)funcBody).Value);
+                }
+            }
+
             return true;
         }
 
@@ -94,6 +107,11 @@ namespace loady
             acts.Add($"{mod}.{act.Name}", act);
 
             return true;
+        }
+
+        private void LoadFunc(string mod, string func)
+        {
+            Builder.Inst().LoadFunc(mod, func);
         }
     }
 }

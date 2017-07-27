@@ -309,6 +309,11 @@ namespace loady
             flow.Jump(index);
         }
 
+        public void jump(string act)
+        {
+            flow.Jump(act);
+        }
+
         public void fail(string msg = "")
         {
             Complete(true, $"fail from script w/ {msg}");
@@ -371,7 +376,7 @@ namespace loady
             return v;
         }
 
-        public object has(string key)
+        public bool has(string key)
         {
             return dict.ContainsKey(key);
         }
@@ -397,17 +402,32 @@ namespace loady
 
         public string get_string(string key)
         {
-            return get(key) as string;
+            var obj = get(key);
+            if ( obj == null )
+            {
+                return "";
+            }
+            return (string)obj;
         }
 
         public float get_float(string key)
         {
-            return (float)get(key);
+            var obj = get(key);
+            if ( obj == null )
+            {
+                return 0;
+            }
+            return (float)obj;
         }
 
         public int get_int(string key)
         {
-            return (int)get(key);
+            var obj = get(key);
+            if ( obj == null )
+            {
+                return 0;
+            }
+            return (int)obj;
         }
 
         public JToken get_json(string key)
@@ -415,9 +435,81 @@ namespace loady
             return (JToken)get(key);
         }
 
+        public int inc(string key)
+        {
+            if ( !has(key) )
+            {
+                set(key, 0);
+            }
+
+            var v = get_int(key);
+            set(key, v + 1);
+
+            return v + 1;
+        }
+        
+        public int dec(string key)
+        {
+            if ( !has(key) )
+            {
+                set(key, 0);
+            }
+
+            var v = get_int(key);
+            set(key, v - 1);
+
+            return v - 1;
+        }
+
         public void clear(string key)
         {
             dict.Remove(key);
+        }
+
+        public void loop_begin(string key)
+        {
+            set(key, new Loop()); 
+        }
+
+        public void loop_add(string key, object e)
+        {
+            var obj = get(key);
+            if ( obj == null )
+            {
+                return;
+            }
+
+            var loop = (Loop)obj;
+            loop.Add(e);
+        }
+
+        public bool loop_is_end(string key)
+        {
+            var obj = get(key);
+            if ( obj == null )
+            {
+                return true;
+            }
+
+            var loop = (Loop)obj;
+            return loop.IsEnd();
+        }
+
+        public object loop_next(string key)
+        {
+            var obj = get(key);
+            if ( obj == null )
+            {
+                return null;
+            }
+
+            var loop = (Loop)obj;
+            return loop.Next();
+        }
+
+        public void loop_clear(string key)
+        {
+            clear(key);
         }
 
         public void connect(string ip, ushort port)
@@ -428,6 +520,16 @@ namespace loady
         public void send(loady.Msg m)
         {
             OnSend(m);
+        }
+
+        public void clear_msg()
+        {
+            Msg m;
+
+            while ( recvQ.TryDequeue(out m))
+            {
+                // empty
+            }
         }
 
         public string get_id()
@@ -448,6 +550,11 @@ namespace loady
         public void disconnect()
         {
             Session.Disconnect();
+        }
+
+        public void log(string msg)
+        {
+            logger.Info(msg);
         }
         #endregion
     }

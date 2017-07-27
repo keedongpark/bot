@@ -208,6 +208,22 @@ namespace loady
             }
         }
 
+        public void Jump(string act)
+        {
+            for( int i=0; i<acts.Count; ++i)
+            {
+                if ( acts[i].Name == act )
+                {
+                    this.index = i;
+                    acts[this.index].Begin();
+
+                    return;
+                }
+            }
+
+            logger.Error($"Jump. act: {act} not found");
+        }
+
         public void Complete()
         {
             if ( index >= 0 && index < acts.Count)

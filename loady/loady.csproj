@@ -192,6 +192,7 @@
     <Compile Include="Agent.cs" />
     <Compile Include="Builder.cs" />
     <Compile Include="DefaultModule.cs" />
+    <Compile Include="Loop.cs" />
     <Compile Include="Mods.cs" />
     <Compile Include="Module.cs" />
     <Compile Include="Contract.cs" />

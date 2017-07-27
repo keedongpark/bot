@@ -32,10 +32,13 @@ namespace loady
             this.module = module;
 
             Contract.Assert(module != null);
+
+            Builder.Inst().Prepare();
         }
 
         public bool Load(string filename)
         {
+
             StreamReader sr = new StreamReader(filename);
 
             // http://www.yamllint.com/
@@ -47,6 +50,13 @@ namespace loady
             yaml.Load(sr);
 
             var root = (YamlMappingNode)yaml.Documents[0].RootNode;
+
+            // load modules
+            var modsNode = (YamlSequenceNode)root.Children["modules"];
+            LoadMods(modsNode);
+
+            // 여기부터 Acts 모듈로 지정
+            Builder.Inst().Begin("Acts");
 
             // load flow
             var flowNode = (YamlMappingNode)root.Children["flow"];
@@ -68,33 +78,20 @@ namespace loady
             runnerCount = Int32.Parse(runnersNode.Value);
             reportFilename = reportNode.Value;
 
-            CreateAgents(agentsNode);
-            CreateRunners();
+            LoadAgents(agentsNode);
+
+            Builder.Inst().End("Acts");
 
             Builder.Inst().Build(Path.GetFullPath(filename));
 
-            return Agents.Count > 0;
-        }
+            CreateRunners();
 
-        public bool LoadMod(string filename)
-        {
-            return Mods.Inst().Load(filename);
+            return Agents.Count > 0;
         }
 
         public void Start()
         {
             Report.Inst().Start(reportFilename);
-
-            Msg m = new Msg();
-
-            m.json["agent"] = "agent";
-            m.json["category"] = "category";
-            m.json["name"] = "name";
-            m.json["begin"] = "begin";
-            m.json["end"] = "end";
-            m.json["elapsed"] = "elapsed";
-
-            Report.Inst().Notify(m);
 
             foreach (var runner in runners)
             {
@@ -136,6 +133,32 @@ namespace loady
             }
 
             Report.Inst().Stop();
+        }
+
+        private void LoadAgents(YamlMappingNode agentsNode)
+        {
+            CreateAgents(agentsNode);
+        }
+
+        private void LoadMods(YamlSequenceNode modsNode)
+        {
+            for ( int i=0; i<modsNode.Children.Count; ++i)
+            {
+                LoadMod(((YamlScalarNode)modsNode.Children[i]).Value);
+            }
+        }
+
+        private bool LoadMod(string filename)
+        {
+            var mod = Path.GetFileNameWithoutExtension(filename);
+
+            Builder.Inst().Begin(mod);
+
+            bool rc = Mods.Inst().Load(filename);
+
+            Builder.Inst().End(mod);
+
+            return rc;
         }
 
         void CreateAgents(YamlMappingNode agentsNode)

@@ -48,6 +48,12 @@ namespace test.Test
 
             Assert.IsTrue(s == null);
         }
+        
+        [Test]
+        public void TestTupleArray()
+        {
+            var tpl = new Tuple<int>(1);
+        }
 
         object v;
     }
