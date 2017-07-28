@@ -22,7 +22,8 @@ namespace loady
         int delayStartTick = 0;
         int executeCount = 0;
         string typeName = "loady.Agent";
-        Session session;
+
+        Dictionary<string, Session> sessions = new Dictionary<string, Session>();
         ConcurrentQueue<Msg> recvQ = new ConcurrentQueue<Msg>();
 
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -37,6 +38,9 @@ namespace loady
 
         DateTime beginTime;
         DateTime endTime;
+        Random rand = new Random();
+
+        public string Id { get { return config.id; } }
 
         /// <summary>
         /// get index 
@@ -69,11 +73,6 @@ namespace loady
         public int ExecuteCount { get { return executeCount; } }
 
         /// <summary>
-        /// get session
-        /// </summary>
-        public Session Session { get { return session; } }
-
-        /// <summary>
         /// get recv queue
         /// </summary>
         public ConcurrentQueue<Msg> RecvQueue { get { return recvQ; } }
@@ -95,7 +94,6 @@ namespace loady
         {
             this.index = index;
             this.config = config;
-            this.session = new Session(this);
 
             SetTypeName(nameof(Agent));            
 
@@ -261,9 +259,19 @@ namespace loady
             // parse and push msg into queue
         }
 
-        protected virtual void OnSend(Msg m)
+        protected virtual void OnSend(string key, Msg m)
         {
             // make into bytes and send it
+        }
+
+        protected Session GetSession(string key)
+        {
+            if ( sessions.ContainsKey(key) )
+            {
+                return sessions[key];
+            }
+
+            return null;
         }
 
         #region Override Functions 
@@ -361,6 +369,11 @@ namespace loady
             delayed = true;
             delayedMilliSeconds = milliseconds;
             delayStartTick = Environment.TickCount;
+        }
+
+        public void delay_random(int milliseconds)
+        {
+            delay(rand.Next() % milliseconds);
         }
 
         public bool set(string key, bool v)
@@ -512,14 +525,43 @@ namespace loady
             clear(key);
         }
 
+        public void connect(string key, string ip, ushort port)
+        {
+            var session = new Session(this);
+            sessions[key] = session;
+            session.Connect(ip, port);
+        }
+
         public void connect(string ip, ushort port)
         {
-            Session.Connect(ip, port);
+            connect("default", ip, port);
         }
 
         public void send(loady.Msg m)
         {
-            OnSend(m);
+            OnSend("default", m);
+        }
+
+        public void send(string key, loady.Msg m)
+        {
+            OnSend(key, m);
+        }
+
+        public bool is_connected(string key = "default")
+        {
+            var s = GetSession(key);
+
+            return s != null && s.IsConnected();
+        }
+
+        public void disconnect(string key = "default")
+        {
+            var s = GetSession(key);
+
+            if ( s != null )
+            {
+                s.Disconnect();
+            }
         }
 
         public void clear_msg()
@@ -542,15 +584,7 @@ namespace loady
             return config.pw;
         }
 
-        public bool is_connected()
-        {
-            return Session.IsConnected();
-        }
-
-        public void disconnect()
-        {
-            Session.Disconnect();
-        }
+       
 
         public void log(string msg)
         {

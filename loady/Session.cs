@@ -184,7 +184,7 @@ namespace loady
             }
             catch (Exception ex)
             {
-                agent.fail($"session error {ex}");
+                logger.Warn($"session error {ex}");
 
                 Disconnect();
             }
@@ -208,7 +208,7 @@ namespace loady
             }
             catch (Exception ex)
             {
-                agent.fail($"session error {ex}");
+                logger.Warn($"session error {ex}");
 
                 // TODO: exception 종류에 따라 체크해야 하는 지 확인 
                 // x2clr 코드 확인

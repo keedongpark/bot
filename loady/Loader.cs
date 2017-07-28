@@ -51,9 +51,12 @@ namespace loady
 
             var root = (YamlMappingNode)yaml.Documents[0].RootNode;
 
-            // load modules
-            var modsNode = (YamlSequenceNode)root.Children["modules"];
-            LoadMods(modsNode);
+            if (root.Children.ContainsKey("modules"))
+            {
+                // load modules
+                var modsNode = (YamlSequenceNode)root.Children["modules"];
+                LoadMods(modsNode);
+            }
 
             // 여기부터 Acts 모듈로 지정
             Builder.Inst().Begin("Acts");
