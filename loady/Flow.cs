@@ -210,6 +210,8 @@ namespace loady
 
         public void Jump(string act)
         {
+            acts[this.index].End();
+
             for( int i=0; i<acts.Count; ++i)
             {
                 if ( acts[i].Name == act )

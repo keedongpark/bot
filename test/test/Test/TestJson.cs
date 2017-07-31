@@ -51,12 +51,6 @@ namespace test.Test
             users.Add(1);
             users.Add(2);
 
-            foreach( var child in users )
-            {
-
-            }
-
-
             tok["users"] = users;
 
             Assert.IsTrue(tok["prop"].Value<string>() == "value");
